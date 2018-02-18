@@ -3,6 +3,13 @@ pragma solidity ^0.4.18;
 // import "./oraclizeAPI_0.4.sol";
 import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
 
+/*
+Inputs:
+"0xDaed2aB0Ba49B268AF6f62a92F3f96001A7a5aF", 10, "hello", 1, 1, 1, 1
+"0xb5f13DEbf210395f133CeC286a9Bea5256809AB6", 
+"0xDaed2aB0Ba49B268AF6f62a92F3f96001A7a5aFf", "1518945020", "1518945420"
+*/
+
 contract Commit is usingOraclize {
 
     event logStr(string val);
@@ -24,11 +31,14 @@ contract Commit is usingOraclize {
 
     // Redundant accounting to save on computation
     uint256 balance;
-
+    
     bool isOver;
     mapping (address => bool) isParticipant;
     mapping (address => bool) isProven;
-    mapping (address => string) urlKey;
+    
+    mapping (address => string) urlKey1;
+    mapping (address => string) urlKey2;
+    mapping (address => string) urlKey3;
 
   // Creates a new Commitment
   function Commit(address _nodeAddress, uint256 _amountToStake, string _name, uint _days,
@@ -64,7 +74,7 @@ contract Commit is usingOraclize {
 
 
 
-   function proveCommitment(string senderAddrString, string nodeAddrString, string endTimeString, string executeTimeString) public payable {
+   function proveCommitment() public payable {
 
      // require ((endTime < now) &&(now < executeTime));
      // require (isParticipant[msg.sender]);
@@ -76,15 +86,10 @@ contract Commit is usingOraclize {
     uint executeTimeVal = stringToUint(executeTimeString);
     */
 
-    string memory test_url1 = makeStr1(senderAddrString, nodeAddrString);
-
-    string memory test_url2 = makeStr2(endTimeString, executeTimeString);
-
-    string memory test_url3 = strConcat(test_url1, test_url2);
-
+    string memory test_url3 = strConcat(urlKey1[msg.sender], urlKey2[msg.sender]);
     logStr(test_url3);
 
-    urlKey[msg.sender] = test_url3;
+    urlKey3[msg.sender] = test_url3;
 
     // Necessary checks for later
     /*
@@ -93,29 +98,34 @@ contract Commit is usingOraclize {
             logStr("Success!");
         }
     }*/
+
+    //oraclize_query("URL", query_url2);
    }
 
 
 function submitCommitment() payable {
     // insert more require checks here
-
-    oraclize_query("URL", urlKey[msg.sender]);
+    
+    oraclize_query("URL", urlKey3[msg.sender]);
 }
 
 
 
-function makeStr1(string senderAddrString, string nodeAddrString) internal returns (string str_url) {
+function makeStr1(string senderAddrString, string nodeAddrString) public payable {
     string memory base_url = "https://geoproof.herokuapp.com/api/confirm?userAddress=";
     string memory node_url = "&nodeAddress=";
-    str_url = strConcat(base_url, senderAddrString, node_url, nodeAddrString);
+    string memory str_url = strConcat(base_url, senderAddrString, node_url, nodeAddrString);
+    logStr(str_url);
+    urlKey1[msg.sender] = str_url;
 }
 
 
 
-function makeStr2(string endTimeString, string executeTimeString) internal returns (string str_url) {
+function makeStr2(string endTimeString, string executeTimeString) public payable {
     string memory begin_url = "&beginTime=";
     string memory end_url = "&endTime=";
-    str_url = strConcat(begin_url, endTimeString, end_url, executeTimeString);
+    string memory str_url = strConcat(begin_url, endTimeString, end_url, executeTimeString);
+    urlKey2[msg.sender] = str_url;
 }
 
 
@@ -135,15 +145,14 @@ function stringToUint(string s) constant returns (uint result) {
 
    function __callback(bytes32 myid, string result) {
        if (msg.sender != oraclize_cbAddress()) revert();
-
+       
        logStr(result);
-
-       /*
+       
        address provenAddr = parseAddr(result);
        if (isParticipant[provenAddr] && (! isProven[provenAddr])) {
            isProven[provenAddr] = true;
            actualAddresses.push(provenAddr);
-       }*/
+       }
    }
 
 
